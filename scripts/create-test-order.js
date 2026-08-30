@@ -1,5 +1,6 @@
 require('dotenv').config();
 const Razorpay = require('razorpay');
+const store = require('../utils/store');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -17,6 +18,10 @@ async function createOrder() {
     console.log("Order created successfully:");
     console.log("Order ID:", order.id);
     console.log("Full response:", order);
+    
+    // Record trusted amount in store
+    store.recordTrustedOrder(order.id, order.amount, order.currency);
+    console.log(`[STORE] Recorded trusted order ${order.id} with amount ${order.amount}`);
     
     // NOTE: This order ID will later be used to test the amount-binding integrity check
   } catch (error) {
