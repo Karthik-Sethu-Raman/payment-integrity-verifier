@@ -35,9 +35,9 @@ Details: ${JSON.stringify(details || {})}
 Provide ONLY the 1-2 sentence explanation, nothing else. No markdown.
 `;
 
-  // 5-second timeout via abort controller to prevent hanging the webhook pipeline
+  // 8-second timeout via abort controller; explanation runs outside the response path.
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const response = await fetch('https://api.fireworks.ai/inference/v1/chat/completions', {

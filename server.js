@@ -103,7 +103,7 @@ app.post('/webhook', async (req, res) => {
       const details = bindingResult.reason === 'amount_mismatch' 
         ? { expected: bindingResult.expected, actual: bindingResult.actual } 
         : {};
-      return handleFailure(res, eventId, paymentEntity.order_id, `amount_mismatch: ${bindingResult.reason}`, checkResults, details);
+      return handleFailure(res, eventId, paymentEntity.order_id, bindingResult.reason, checkResults, details);
     }
     checkResults.amountBinding = true;
     console.log("[SUCCESS] Amount binding verified successfully.");
@@ -112,7 +112,7 @@ app.post('/webhook', async (req, res) => {
   // 3. Replay Protection Check
   const replayResult = verifyReplay(eventId, store);
   if (!replayResult.valid) {
-    return handleFailure(res, eventId, orderId, `replay_detected: ${replayResult.reason}`, checkResults);
+    return handleFailure(res, eventId, orderId, replayResult.reason, checkResults);
   }
   checkResults.replay = true;
   console.log("[SUCCESS] Replay check passed.");

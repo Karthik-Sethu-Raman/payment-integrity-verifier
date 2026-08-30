@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-08-30T18:35:31.742Z",
+  "webhookUrl": "http://127.0.0.1:3000/webhook",
+  "results": [
+    {
+      "name": "1. Legitimate transaction A",
+      "groundTruth": "legitimate",
+      "expectedOutcome": "ACCEPTED",
+      "expectedReason": null,
+      "actualOutcome": "ACCEPTED",
+      "rejectionReason": null,
+      "httpStatus": 200,
+      "matchesExpectation": true
+    },
+    {
+      "name": "2. Legitimate transaction B",
+      "groundTruth": "legitimate",
+      "expectedOutcome": "ACCEPTED",
+      "expectedReason": null,
+      "actualOutcome": "ACCEPTED",
+      "rejectionReason": null,
+      "httpStatus": 200,
+      "matchesExpectation": true
+    },
+    {
+      "name": "3. Forged signature",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "invalid_signature",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "invalid_signature",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    },
+    {
+      "name": "4. Missing signature header",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "invalid_signature",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "invalid_signature",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    },
+    {
+      "name": "5. Tampered body, stale signature",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "invalid_signature",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "invalid_signature",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    },
+    {
+      "name": "6. Amount under-claim",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "amount_mismatch",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "amount_mismatch",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    },
+    {
+      "name": "7. Amount over-claim",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "amount_mismatch",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "amount_mismatch",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    },
+    {
+      "name": "8. Replay of transaction A",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "replay_detected",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "replay_detected",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    },
+    {
+      "name": "9. Malformed signed payload",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "malformed_payload",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "malformed_payload",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    },
+    {
+      "name": "10. Unknown order_id",
+      "groundTruth": "malicious",
+      "expectedOutcome": "REJECTED",
+      "expectedReason": "unknown_order",
+      "actualOutcome": "REJECTED",
+      "rejectionReason": "unknown_order",
+      "httpStatus": 400,
+      "matchesExpectation": true
+    }
+  ],
+  "metrics": {
+    "truePositives": 8,
+    "falsePositives": 0,
+    "trueNegatives": 2,
+    "falseNegatives": 0,
+    "precision": 1,
+    "recall": 1,
+    "falsePositiveRate": 0
+  }
+}
