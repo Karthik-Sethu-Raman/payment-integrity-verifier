@@ -5,7 +5,9 @@ const verifySignature = require('./utils/verifySignature');
 const verifyAmountBinding = require('./utils/verifyAmountBinding');
 const verifyReplay = require('./utils/verifyReplay');
 const store = require('./utils/store');
-const { appendAuditEntry } = require('./utils/auditLog');
+const fs = require('fs');
+const path = require('path');
+const { appendAuditEntry, getAuditLog, verifyAuditLogIntegrity } = require('./utils/auditLog');
 const { explainIncident } = require('./utils/explainIncident');
 const flagOrder = require('./utils/flagOrder');
 
@@ -18,7 +20,49 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/webhook', express.raw({ type: 'application/json' }));
+
+// ---------------------------------------------------------
+// Dashboard API Endpoints
+// ---------------------------------------------------------
+
+app.get('/api/audit-log', (req, res) => {
+  try {
+    const logs = getAuditLog();
+    // Return most recent first
+    res.json(logs.reverse());
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read audit log' });
+  }
+});
+
+app.get('/api/metrics', (req, res) => {
+  try {
+    const resultsPath = path.join(__dirname, 'results', 'adversarial-suite-results.json');
+    if (!fs.existsSync(resultsPath)) {
+      return res.json({ metrics: null });
+    }
+    const data = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read metrics' });
+  }
+});
+
+app.get('/api/audit-log/verify', (req, res) => {
+  try {
+    // This is a REAL live check each time it's called
+    const isValid = verifyAuditLogIntegrity();
+    res.json({ valid: isValid });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to verify audit log' });
+  }
+});
+
+// ---------------------------------------------------------
+// Webhook Pipeline
+// ---------------------------------------------------------
 
 // Helper function to handle failures: logs to audit, flags order, and returns 400
 function handleFailure(res, eventId, orderId, reason, checkResults, details = {}) {

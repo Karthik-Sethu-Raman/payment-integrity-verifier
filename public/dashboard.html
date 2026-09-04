@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integrity Verifier | Security Audit Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --color-primary: #1E40AF;
+      --color-on-primary: #FFFFFF;
+      --color-secondary: #3B82F6;
+      --color-accent: #D97706;
+      --color-background: #F8FAFC;
+      --color-foreground: #1E3A8A;
+      --color-card: #FFFFFF;
+      --color-card-foreground: #1E3A8A;
+      --color-muted: #E9EEF6;
+      --color-muted-foreground: #475569;
+      --color-border: #DBEAFE;
+      --color-destructive: #DC2626;
+      --color-success: #16A34A;
+      
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-6: 24px;
+      --space-8: 32px;
+    }
+
+    body {
+      font-family: 'Fira Sans', sans-serif;
+      background-color: var(--color-background);
+      color: var(--color-foreground);
+      margin: 0;
+      padding: var(--space-6);
+      line-height: 1.5;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Fira Code', monospace;
+      margin-top: 0;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: var(--space-4);
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: -0.05em;
+    }
+
+    .status-panel {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .status-indicator {
+      font-family: 'Fira Code', monospace;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: var(--space-2) var(--space-4);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .status-indicator.verified {
+      background-color: #DCFCE7;
+      color: var(--color-success);
+      border: 1px solid #BBF7D0;
+    }
+
+    .status-indicator.tampered {
+      background-color: #FEE2E2;
+      color: var(--color-destructive);
+      border: 1px solid #FECACA;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+
+    button {
+      background-color: var(--color-primary);
+      color: var(--color-on-primary);
+      border: none;
+      padding: var(--space-2) var(--space-4);
+      font-family: 'Fira Code', monospace;
+      font-weight: 500;
+      font-size: 0.875rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: var(--color-secondary);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .metric-card {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: var(--space-4);
+      border-radius: 6px;
+    }
+
+    .metric-card h3 {
+      font-family: 'Fira Sans', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--color-muted-foreground);
+      margin-bottom: var(--space-2);
+    }
+
+    .metric-card .value {
+      font-family: 'Fira Code', monospace;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .metric-card .sub-value {
+      font-size: 0.875rem;
+      color: var(--color-muted-foreground);
+      margin-top: var(--space-1);
+    }
+
+    .table-wrapper {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--color-muted);
+      color: var(--color-muted-foreground);
+      font-weight: 600;
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 2px solid var(--color-border);
+    }
+
+    td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    tr:hover {
+      background-color: #F1F5F9;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .badge.accepted {
+      background-color: #DCFCE7;
+      color: var(--color-success);
+    }
+
+    .badge.rejected {
+      background-color: #FEE2E2;
+      color: var(--color-destructive);
+    }
+
+    .check-indicators {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .indicator-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-family: 'Fira Code', monospace;
+      border: 1px solid var(--color-border);
+      background-color: var(--color-background);
+      color: var(--color-muted-foreground);
+    }
+    
+    .indicator-pill.pass {
+      border-color: #BBF7D0;
+      color: var(--color-success);
+      background-color: #F0FDF4;
+    }
+    
+    .indicator-pill.fail {
+      border-color: #FECACA;
+      color: var(--color-destructive);
+      background-color: #FEF2F2;
+    }
+
+    .explanation {
+      font-size: 0.8rem;
+      color: var(--color-muted-foreground);
+      margin-top: var(--space-2);
+      max-width: 400px;
+      line-height: 1.4;
+    }
+    
+    .reason-code {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      color: var(--color-accent);
+      margin-bottom: var(--space-1);
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Integrity Verifier</h1>
+        <div style="font-size: 0.875rem; color: var(--color-muted-foreground); margin-top: 4px;">Security Audit Dashboard</div>
+      </div>
+      <div class="status-panel">
+        <div id="integrity-status" class="status-indicator">
+          <span>Checking...</span>
+        </div>
+        <button onclick="verifyAuditLog()">Re-verify Chain</button>
+      </div>
+    </div>
+
+    <div class="metrics-grid" id="metrics-container">
+      <!-- Metrics injected via JS -->
+    </div>
+
+    <div class="table-wrapper">
+      <table id="audit-table">
+        <thead>
+          <tr>
+            <th style="width: 180px;">Timestamp</th>
+            <th style="width: 200px;">Event ID</th>
+            <th style="width: 100px;">Outcome</th>
+            <th style="width: 250px;">Integrity Checks</th>
+            <th>Details & Explanation</th>
+          </tr>
+        </thead>
+        <tbody id="audit-tbody">
+          <!-- Rows injected via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    async function fetchMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        const data = await res.json();
+        
+        if (!data || !data.metrics) return;
+        const m = data.metrics;
+        
+        const container = document.getElementById('metrics-container');
+        container.innerHTML = `
+          <div class="metric-card">
+            <h3>Precision</h3>
+            <div class="value">${m.precision.toFixed(4)}</div>
+            <div class="sub-value">TP / (TP + FP)</div>
+          </div>
+          <div class="metric-card">
+            <h3>Recall</h3>
+            <div class="value">${m.recall.toFixed(4)}</div>
+            <div class="sub-value">TP / (TP + FN)</div>
+          </div>
+          <div class="metric-card">
+            <h3>False Pos. Rate</h3>
+            <div class="value">${m.falsePositiveRate.toFixed(4)}</div>
+            <div class="sub-value">FP / (FP + TN)</div>
+          </div>
+          <div class="metric-card">
+            <h3>Confusion Matrix</h3>
+            <div class="value" style="font-size: 1.2rem;">
+              <span style="color:var(--color-success)">${m.truePositives} TP</span> | 
+              <span style="color:var(--color-destructive)">${m.falsePositives} FP</span><br>
+              <span style="color:var(--color-success)">${m.trueNegatives} TN</span> | 
+              <span style="color:var(--color-destructive)">${m.falseNegatives} FN</span>
+            </div>
+            <div class="sub-value">Real-time Adver. Suite</div>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Failed to load metrics", err);
+      }
+    }
+
+    async function verifyAuditLog() {
+      const statusEl = document.getElementById('integrity-status');
+      statusEl.className = 'status-indicator';
+      statusEl.innerHTML = `<span>Verifying...</span>`;
+      
+      try {
+        const res = await fetch('/api/audit-log/verify');
+        const data = await res.json();
+        
+        if (data.valid) {
+          statusEl.className = 'status-indicator verified';
+          statusEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Chain Verified`;
+        } else {
+          statusEl.className = 'status-indicator tampered';
+          statusEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> TAMPERING DETECTED`;
+        }
+      } catch (err) {
+        statusEl.innerHTML = `<span>Verification Failed</span>`;
+      }
+    }
+
+    async function fetchAuditLog() {
+      try {
+        const res = await fetch('/api/audit-log');
+        const logs = await res.json();
+        
+        const tbody = document.getElementById('audit-tbody');
+        tbody.innerHTML = '';
+        
+        logs.forEach(log => {
+          const c = log.content;
+          const tr = document.createElement('tr');
+          
+          const date = new Date(c.timestamp).toLocaleString();
+          const badgeClass = c.outcome === 'accepted' ? 'accepted' : 'rejected';
+          const badgeText = c.outcome.toUpperCase();
+          
+          const getPill = (name, pass) => 
+            `<span class="indicator-pill ${pass ? 'pass' : 'fail'}">${pass ? '✓' : '✗'} ${name}</span>`;
+            
+          const sigPill = getPill('SIG', c.checkResults.signature);
+          const amtPill = getPill('AMT', c.checkResults.amountBinding);
+          const repPill = getPill('REP', c.checkResults.replay);
+
+          let detailsHtml = '';
+          if (c.outcome === 'rejected') {
+            detailsHtml += `<span class="reason-code">${c.reason}</span>`;
+          }
+          if (c.explanation) {
+            detailsHtml += `<div class="explanation">${c.explanation}</div>`;
+          } else if (c.outcome === 'accepted') {
+            detailsHtml += `<div class="explanation" style="color:var(--color-success)">All checks passed successfully.</div>`;
+          }
+
+          tr.innerHTML = `
+            <td style="font-family: 'Fira Code', monospace; font-size:0.75rem">${date}</td>
+            <td style="font-family: 'Fira Code', monospace; font-size:0.75rem">${c.eventId}</td>
+            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+            <td>
+              <div class="check-indicators">
+                ${sigPill}${amtPill}${repPill}
+              </div>
+            </td>
+            <td>${detailsHtml}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Failed to load audit logs", err);
+      }
+    }
+
+    // Init
+    fetchMetrics();
+    verifyAuditLog();
+    fetchAuditLog();
+    
+    // Auto-refresh logs every 5 seconds
+    setInterval(fetchAuditLog, 5000);
+  </script>
+</body>
+</html>
